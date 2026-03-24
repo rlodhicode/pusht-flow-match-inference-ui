@@ -34,7 +34,7 @@ class PushTPhysics:
     K_P         = 100.0
     K_V         = 20.0
     GOAL_POSE   = (256.0, 256.0, math.pi / 4)
-    SUCCESS_THR = 0.95
+    SUCCESS_THR = 0.9
 
     def __init__(self):
         self.space = None
@@ -128,31 +128,31 @@ class PushTPhysics:
         self.space.add(body, shape)
         return body
 
-    def _add_tee(self, position, angle, scale=30):
-        mass   = 1
+    def _add_tee(self, position, angle, scale=30, mask=pymunk.ShapeFilter.ALL_MASKS()):
+        mass = 1
         length = 4
         vertices1 = [
             (-length * scale / 2, scale),
-            ( length * scale / 2, scale),
-            ( length * scale / 2, 0),
+            (length * scale / 2, scale),
+            (length * scale / 2, 0),
             (-length * scale / 2, 0),
         ]
-        vertices2 = [
-            (-scale / 2,          scale),
-            (-scale / 2, length * scale),
-            ( scale / 2, length * scale),
-            ( scale / 2,          scale),
-        ]
         inertia1 = pymunk.moment_for_poly(mass, vertices=vertices1)
-        inertia2 = pymunk.moment_for_poly(mass, vertices=vertices2)
-        body     = pymunk.Body(mass, inertia1 + inertia2)
-        shape1   = pymunk.Poly(body, vertices1)
-        shape2   = pymunk.Poly(body, vertices2)
-        body.center_of_gravity = (
-            (shape1.center_of_gravity + shape2.center_of_gravity) / 2
-        )
+        vertices2 = [
+            (-scale / 2, scale),
+            (-scale / 2, length * scale),
+            (scale / 2, length * scale),
+            (scale / 2, scale),
+        ]
+        inertia2 = pymunk.moment_for_poly(mass, vertices=vertices1)
+        body = pymunk.Body(mass, inertia1 + inertia2)
+        shape1 = pymunk.Poly(body, vertices1)
+        shape2 = pymunk.Poly(body, vertices2)
+        shape1.filter = pymunk.ShapeFilter(mask=mask)
+        shape2.filter = pymunk.ShapeFilter(mask=mask)
+        body.center_of_gravity = (shape1.center_of_gravity + shape2.center_of_gravity) / 2
         body.position = position
-        body.angle    = angle
+        body.angle = angle
         body.friction = 1
         self.space.add(body, shape1, shape2)
         return body

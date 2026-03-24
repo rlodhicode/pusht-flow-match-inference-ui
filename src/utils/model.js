@@ -14,17 +14,14 @@ export const PRED_HORIZON = 16;
 export const ACTION_HORIZON = 8;
 export const DCT_K = 10;
 
-// These stats come from dataset.stats in the notebook.
-// obs space is [0,512] for xy and [0,2π] for angle.
-// action space is [0,512] for xy.
-const OBS_STATS = {
-  min: [0, 0, 0, 0, 0],
-  max: [512, 512, 512, 512, 2 * Math.PI],
-};
-const ACTION_STATS = {
-  min: [0, 0],
-  max: [512, 512],
-};
+// ─── Stats import ────────────────────────────────────────────
+let STATS = null;
+
+export async function loadStats(url = "/stats.json") {
+  const res = await fetch(url);
+  STATS = await res.json();
+  console.log("[model] Stats loaded", STATS);
+}
 
 // ─── Session ─────────────────────────────────────────────────────────────────
 
@@ -69,11 +66,15 @@ function unnormalise(n, min, max) {
  */
 function buildObs6(rawObs5) {
   const [ax, ay, bx, by, angle] = rawObs5;
+
+  const obsMin = STATS.obs.min;
+  const obsMax = STATS.obs.max;
+
   return [
-    normalise(ax, OBS_STATS.min[0], OBS_STATS.max[0]),
-    normalise(ay, OBS_STATS.min[1], OBS_STATS.max[1]),
-    normalise(bx, OBS_STATS.min[2], OBS_STATS.max[2]),
-    normalise(by, OBS_STATS.min[3], OBS_STATS.max[3]),
+    normalise(ax, obsMin[0], obsMax[0]),
+    normalise(ay, obsMin[1], obsMax[1]),
+    normalise(bx, obsMin[2], obsMax[2]),
+    normalise(by, obsMin[3], obsMax[3]),
     Math.sin(angle),
     Math.cos(angle),
   ];
@@ -190,12 +191,14 @@ export async function sampleActions(obsHistory, flowSteps = 10, onStep = null) {
   const actions = [];
   const start = OBS_HORIZON - 1; // = 1
   const end = start + ACTION_HORIZON; // = 9
+  const actMin = STATS.action.min;
+  const actMax = STATS.action.max;
   for (let i = start; i < end; i++) {
     const nx = trajNorm[i * 2 + 0];
     const ny = trajNorm[i * 2 + 1];
     actions.push([
-      unnormalise(nx, ACTION_STATS.min[0], ACTION_STATS.max[0]),
-      unnormalise(ny, ACTION_STATS.min[1], ACTION_STATS.max[1]),
+      unnormalise(nx, actMin[0], actMax[0]),
+      unnormalise(ny, actMin[1], actMax[1]),
     ]);
   }
 

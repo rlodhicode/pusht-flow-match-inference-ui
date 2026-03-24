@@ -6,11 +6,11 @@ import {
   sampleActions,
   isModelLoaded,
   OBS_HORIZON,
-  ACTION_HORIZON,
+  loadStats,
 } from "./utils/model";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MAX_STEPS = 200;
+const MAX_STEPS = 300;
 const CANVAS_SIZE = 480;
 const FRAME_MS = 100; // ~10 fps to match env metadata
 const SUCCESS_THRESHOLD = 0.95;
@@ -124,6 +124,7 @@ export default function App() {
     try {
       await loadModel(modelUrl);
       setModelStatus("ready");
+      await loadStats();
     } catch (e) {
       console.error(e);
       setModelStatus("error");
@@ -295,7 +296,7 @@ export default function App() {
           </div>
           <div className={`badge badge-${modelStatus}`}>
             {modelStatus === "idle" && "○ no model"}
-            {modelStatus === "loading" && "◌ loading…"}
+            {modelStatus === "loading" && "◌ loading model…"}
             {modelStatus === "ready" && "● model ready"}
             {modelStatus === "error" && "✕ load failed"}
           </div>
