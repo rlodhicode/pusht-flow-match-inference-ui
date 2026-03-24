@@ -437,6 +437,11 @@ body,
   cursor: pointer;
 }
 
+.slider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -461,6 +466,16 @@ body,
   cursor: pointer;
 }
 
+.slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+.slider:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+.slider:disabled::-webkit-slider-thumb:hover {
+  transform: none;
+}
+
 .text-input {
   width: 100%;
   padding: 7px 10px;
@@ -479,6 +494,11 @@ body,
 }
 .text-input::placeholder {
   color: var(--text-dimmer);
+}
+
+.text-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .hint {

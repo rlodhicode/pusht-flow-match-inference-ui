@@ -24,6 +24,7 @@ function SliderField({
   step = 1,
   onChange,
   unit = "",
+  disabled = false,
 }) {
   return (
     <div className="field">
@@ -42,6 +43,7 @@ function SliderField({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="slider"
+        disabled={disabled}
       />
     </div>
   );
@@ -59,6 +61,8 @@ function Stat({ label, value, accent }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  const isProd = import.meta.env.PROD;
+
   // ── Model state ──────────────────────────────────────────────────────────
   const [modelStatus, setModelStatus] = useState("idle");
   const [modelError, setModelError] = useState("");
@@ -96,6 +100,8 @@ export default function App() {
   const [done, setDone] = useState(false);
   const [flowProgress, setFlowProgress] = useState(0);
 
+  const isEditable = !running && stepCount === 0;
+
   // Refs for the animation loop
   const obsHistoryRef = useRef([]);
   const actionQueueRef = useRef([]);
@@ -117,6 +123,14 @@ export default function App() {
     }));
   }, [workerObs]);
 
+  // ── Sync slider values → canvas ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!isEditable) return;
+    if (!workerReady) return;
+
+    resetSim();
+  }, [agentX, agentY, blockX, blockY, blockAngleDeg]);
+
   // ── Model loading ─────────────────────────────────────────────────────────
   const handleLoadModel = useCallback(async () => {
     setModelStatus("loading");
@@ -131,6 +145,13 @@ export default function App() {
       setModelError(e.message || String(e));
     }
   }, [modelUrl]);
+
+  useEffect(() => {
+    if (!isProd) return;
+    if (modelStatus !== "idle") return;
+
+    handleLoadModel();
+  }, [isProd, modelStatus, handleLoadModel]);
 
   // ── Reset simulation ──────────────────────────────────────────────────────
   // Sends the slider values to the worker as a 5-element state array.
@@ -259,6 +280,18 @@ export default function App() {
     inferLockRef.current = false;
     clearInterval(frameTimerRef.current);
     resetSim();
+  };
+
+  const rand = (min, max) => Math.random() * (max - min) + min;
+
+  const handleRandomize = () => {
+    if (!isEditable) return;
+
+    setAgentX(rand(50, 460));
+    setAgentY(rand(50, 460));
+    setBlockX(rand(100, 400));
+    setBlockY(rand(100, 400));
+    setBlockAngleDeg(rand(0, 360));
   };
 
   // ── Derived display values ────────────────────────────────────────────────
@@ -406,16 +439,24 @@ export default function App() {
                 value={modelUrl}
                 onChange={(e) => setModelUrl(e.target.value)}
                 placeholder="/tiny_flowmatch.onnx"
+                disabled={isProd}
               />
               <span className="hint">
-                Place <code>tiny_flowmatch.onnx</code> in the{" "}
-                <code>public/</code> folder of your Vite project.
+                {isProd ? (
+                  <>Model path is fixed in production builds.</>
+                ) : (
+                  <>
+                    Place <code>tiny_flowmatch.onnx</code> in the{" "}
+                    <code>public/</code> folder. Path can be edited in
+                    development.
+                  </>
+                )}
               </span>
             </div>
             <button
               className={`btn btn-full ${modelStatus === "loading" ? "btn-loading" : "btn-primary"}`}
               onClick={handleLoadModel}
-              disabled={modelStatus === "loading"}
+              disabled={modelStatus === "loading" || isProd}
             >
               {modelStatus === "loading" ? "◌ Loading WASM…" : "⬇ Load Model"}
             </button>
@@ -434,6 +475,7 @@ export default function App() {
               min={50}
               max={460}
               onChange={setAgentX}
+              disabled={!isEditable}
             />
             <SliderField
               label="Y"
@@ -441,6 +483,7 @@ export default function App() {
               min={50}
               max={460}
               onChange={setAgentY}
+              disabled={!isEditable}
             />
             <p className="panel-sub" style={{ marginTop: 12 }}>
               Block position & angle
@@ -451,6 +494,7 @@ export default function App() {
               min={100}
               max={400}
               onChange={setBlockX}
+              disabled={!isEditable}
             />
             <SliderField
               label="Y"
@@ -458,6 +502,7 @@ export default function App() {
               min={100}
               max={400}
               onChange={setBlockY}
+              disabled={!isEditable}
             />
             <SliderField
               label="Angle"
@@ -466,13 +511,15 @@ export default function App() {
               max={360}
               unit="°"
               onChange={setBlockAngleDeg}
+              disabled={!isEditable}
             />
             <button
               className="btn btn-full"
-              onClick={handleReset}
+              onClick={handleRandomize}
+              disabled={!isEditable}
               style={{ marginTop: 8 }}
             >
-              ↺ Apply & Reset
+              🎲 Randomize
             </button>
           </div>
 
