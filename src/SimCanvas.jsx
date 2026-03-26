@@ -196,7 +196,7 @@ export default function SimCanvas({
       ref={canvasRef}
       width={s}
       height={s}
-      style={{ display: "block", borderRadius: "4px" }}
+      style={{ width: "100%", height: "auto", borderRadius: "4px" }}
     />
   );
 }
